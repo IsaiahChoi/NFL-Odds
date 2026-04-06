@@ -1,0 +1,122 @@
+# =============================================================================
+# NFL Live Odds Microstructure — Default Configuration
+# All hyperparameters, thresholds, and file paths.
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Data paths
+# ---------------------------------------------------------------------------
+data:
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  pbp_file: "data/processed/pbp_cleaned.parquet"
+  odds_file: "data/processed/synthetic_odds.parquet"
+  seasons: [2022, 2023]           # NFL seasons to download
+
+# ---------------------------------------------------------------------------
+# Odds simulator parameters
+# ---------------------------------------------------------------------------
+odds_simulator:
+  sigma_micro: 0.02               # Std dev of microstructure noise (probability scale)
+  momentum_factor_min: 0.5        # Lower bound for per-game momentum_factor ~ Uniform
+  momentum_factor_max: 1.5        # Upper bound for per-game momentum_factor ~ Uniform
+  base_volume_lambda: 100         # Poisson lambda for normal-play volume
+  spike_volume_lambda: 500        # Poisson lambda for scoring/turnover-play volume
+  min_decimal_odds: 1.01          # Floor for decimal odds
+  max_decimal_odds: 50.0          # Ceiling for decimal odds
+
+# ---------------------------------------------------------------------------
+# Feature engineering parameters
+# ---------------------------------------------------------------------------
+features:
+  short_distance_threshold: 4     # Yards; <= this => "short" distance bucket
+  rolling_epa_window: 5           # Number of plays for rolling EPA mean
+  rolling_success_window: 10      # Number of plays for rolling success rate
+  rolling_vol_window: 10          # Number of obs for rolling odds volatility
+  odds_momentum_window: 5         # Number of obs for odds momentum sum
+  volume_surge_window: 20         # Number of obs for rolling mean volume comparison
+  volume_surge_multiplier: 2.0    # Surge threshold = multiplier * rolling mean
+  two_minute_warning_seconds: 120 # Seconds remaining that defines 2-min warning
+
+# ---------------------------------------------------------------------------
+# Hawkes process parameters
+# ---------------------------------------------------------------------------
+hawkes:
+  significant_move_threshold: 0.01  # |odds_return| > this => significant event
+  mu_init: 0.5                       # Initial baseline intensity
+  alpha_init: 0.3                    # Initial excitation coefficient
+  beta_init: 1.0                     # Initial decay rate
+  mu_bounds: [0.0001, 10.0]         # Optimization bounds for mu
+  alpha_bounds: [0.0001, 5.0]       # Optimization bounds for alpha
+  beta_bounds: [0.001, 20.0]        # Optimization bounds for beta
+  sim_seed: 42                       # Default simulation seed
+
+# ---------------------------------------------------------------------------
+# Kalman filter parameters
+# ---------------------------------------------------------------------------
+kalman:
+  Q: 0.0001          # Process noise variance (per second) for latent logit WP
+  R: 0.01            # Observation noise variance for logit(book_implied_prob)
+  x0: 0.0            # Initial state: logit(0.5) = 0
+  P0: 1.0            # Initial state covariance
+  scoring_Q_multiplier: 3.0  # Factor by which Q inflates after a scoring event
+
+# ---------------------------------------------------------------------------
+# Poisson scoring intensity model
+# ---------------------------------------------------------------------------
+poisson_scoring:
+  logistic_max_iter: 1000
+  logistic_C: 1.0                # Regularization strength (1/C)
+  avg_seconds_per_play: 40.0     # Used to convert play-level prob to per-second intensity
+
+# ---------------------------------------------------------------------------
+# Monte Carlo simulation parameters
+# ---------------------------------------------------------------------------
+monte_carlo:
+  n_sims: 10000                  # Default number of simulations
+  avg_play_duration: 5.5         # Seconds per play (mean of Exponential)
+  avg_yards_gained_mean: 3.5     # Mean yards per play ~ N(mean, std)
+  avg_yards_gained_std: 7.0      # Std dev yards per play
+  avg_yards_gained_min: -10      # Clipped lower bound
+  td_threshold_yards: 20         # If yardline_100 <= this, TD probability inflated
+  td_probability: 0.7            # P(TD | scoring event, close to goal)
+  extra_point_points: 7          # Points for TD + extra point
+  field_goal_points: 3           # Points for field goal
+
+# ---------------------------------------------------------------------------
+# Signal generation parameters
+# ---------------------------------------------------------------------------
+signals:
+  edge_threshold: 0.03           # Minimum probability edge to trigger a bet signal
+
+# ---------------------------------------------------------------------------
+# Kelly sizing parameters
+# ---------------------------------------------------------------------------
+kelly:
+  fraction: 0.25                 # Fractional Kelly multiplier (quarter Kelly)
+  max_stake_pct: 0.05            # Max stake as fraction of bankroll per bet
+  max_per_game_pct: 0.08         # Max total exposure per game as fraction of bankroll
+  max_total_pct: 0.20            # Max total exposure across all bets simultaneously
+
+# ---------------------------------------------------------------------------
+# Backtesting parameters
+# ---------------------------------------------------------------------------
+backtest:
+  initial_bankroll: 10000.0      # Starting bankroll in dollars
+  mc_sims: 5000                  # MC simulations per in-game bet (faster than default)
+  kelly_fraction: 0.25           # Fractional Kelly multiplier during backtest
+
+# ---------------------------------------------------------------------------
+# Visualization parameters
+# ---------------------------------------------------------------------------
+visualization:
+  figure_dpi: 120
+  figure_style: "seaborn-v0_8-darkgrid"
+  color_true_wp: "#1f77b4"       # Blue  — nflfastR true WP
+  color_filtered_wp: "#ff7f0e"   # Orange — Kalman filtered WP
+  color_book_prob: "#2ca02c"     # Green  — book implied probability
+  color_hawkes: "#9467bd"        # Purple — Hawkes intensity
+  color_edge: "#d62728"          # Red    — edge
+  color_bet_home: "#17becf"      # Cyan   — home bet marker
+  color_bet_away: "#bcbd22"      # Yellow-green — away bet marker
+  color_scoring: "#e377c2"       # Pink   — scoring event lines
