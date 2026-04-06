@@ -232,7 +232,3 @@ All hyperparameters live in `config/default.yaml` and are documented with inline
 | `backtest.initial_bankroll` | 10000 | Starting capital |
 
 ---
-
-## Disclaimer
-
-This project is for **educational and research purposes only**.  Sports betting involves real financial risk and is subject to legal restrictions that vary by jurisdiction.  Nothing in this repository constitutes financial or legal advice.
