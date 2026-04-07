@@ -118,18 +118,29 @@ Stationarity requires $\rho = \alpha / \beta < 1$.
 
 ### 3. Kalman Filter Recursions
 
-State: $x_t = \text{logit}(\text{true\_wp}_t)$
+State: \( x_t = \text{logit}(\text{true\_wp}_t) \)
 
 **Prediction:**
-$$\hat{x}_{t|t-1} = x_{t-1|t-1}, \qquad P_{t|t-1} = P_{t-1|t-1} + Q \cdot \Delta t$$
 
-**Update** (observation $z_t = \text{logit}(p_{\text{book},t})$):
-$$K_t = \frac{P_{t|t-1}}{P_{t|t-1} + R}$$
-$$x_{t|t} = \hat{x}_{t|t-1} + K_t(z_t - \hat{x}_{t|t-1})$$
-$$P_{t|t} = (1 - K_t)\,P_{t|t-1}$$
+\[
+\hat{x}_{t\mid t-1} = x_{t-1\mid t-1}, \qquad P_{t\mid t-1} = P_{t-1\mid t-1} + Q \cdot \Delta t
+\]
 
-On scoring events, $Q$ is temporarily multiplied by a factor of 3 to accommodate the regime shift.
+**Update** (observation \( z_t = \text{logit}(p_{\text{book},t}) \)):
 
+\[
+K_t = \frac{P_{t\mid t-1}}{P_{t\mid t-1} + R}
+\]
+
+\[
+x_{t\mid t} = \hat{x}_{t\mid t-1} + K_t \bigl(z_t - \hat{x}_{t\mid t-1}\bigr)
+\]
+
+\[
+P_{t\mid t} = (1 - K_t)\,P_{t\mid t-1}
+\]
+
+On scoring events, \( Q \) is temporarily multiplied by a factor of 3 to accommodate the regime shift.
 ### 4. Kelly Criterion
 
 For a bet with decimal odds $d$ and estimated true probability $p$:
